@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rule Engine</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin: 5px 0;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #4cae4c;
+        }
+        #result {
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Rule Engine</h1>
+    <form id="rule-form">
+        <label for="rule">Enter Rule (e.g., age > 30 AND department = 'Sales'):</label>
+        <textarea id="rule" name="rule" rows="3" placeholder='age > 30 AND department = "Sales"'></textarea>
+        
+        <label for="data">Enter User Data (JSON format):</label>
+        <textarea id="data" name="data" rows="3" placeholder='{"age": 35, "department": "Sales", "salary": 60000}'></textarea>
+        
+        <button type="button" onclick="submitRule()">Evaluate Rule</button>
+    </form>
+
+    <h2>Result:</h2>
+    <div id="result"></div>
+
+    <script>
+        async function submitRule() {
+            try {
+                const rule = document.getElementById('rule').value.trim();
+                const data = document.getElementById('data').value.trim();
+                
+                // Validation: Check if rule or data is empty
+                if (!rule || !data) {
+                    document.getElementById('result').innerText = "Please enter both rule and user data.";
+                    return;
+                }
+
+                // Ensure the JSON data is valid
+                let parsedData;
+                try {
+                    parsedData = JSON.parse(data);
+                } catch (error) {
+                    document.getElementById('result').innerText = "Invalid JSON format for user data.";
+                    return;
+                }
+
+                // Call the Flask API to evaluate the rule
+                const response = await fetch('http://localhost:5000/evaluate_rule', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        rule: rule,
+                        data: parsedData
+                    })
+                });
+
+                if (!response.ok) {
+                    document.getElementById('result').innerText = `Error: ${response.statusText}`;
+                    return;
+                }
+
+                const result = await response.json();
+                document.getElementById('result').innerText = result.message !== undefined 
+                    ? `Rule evaluation result: ${result.message}` 
+                    : "Error evaluating rule.";
+
+            } catch (error) {
+                document.getElementById('result').innerText = "An error occurred: " + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
